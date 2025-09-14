@@ -53,7 +53,7 @@ create_directories() {
 # Khởi động các container
 start_containers() {
     print_status "Starting MongoDB containers..."
-    docker-compose up -d
+    docker compose up -d
     
     print_status "Waiting for MongoDB containers to be ready..."
     sleep 30
@@ -81,7 +81,7 @@ check_status() {
 # Dừng tất cả containers
 stop_containers() {
     print_status "Stopping all MongoDB containers..."
-    docker-compose down
+    docker compose down
 }
 
 # Xóa tất cả dữ liệu (cẩn thận!)
@@ -89,7 +89,7 @@ clean_all() {
     print_warning "This will remove all containers and data!"
     read -p "Are you sure? (y/N): " confirm
     if [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]]; then
-        docker-compose down -v
+        docker compose down -v
         docker volume prune -f
         print_status "All data cleaned!"
     else
@@ -133,9 +133,9 @@ restore_data() {
 # Hiển thị logs
 show_logs() {
     if [ -z "$1" ]; then
-        docker-compose logs -f
+        docker compose logs -f
     else
-        docker-compose logs -f $1
+        docker compose logs -f $1
     fi
 }
 
