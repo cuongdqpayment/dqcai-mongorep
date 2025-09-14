@@ -516,6 +516,97 @@ vcgencmd measure_temp
 - Rotate passwords định kỳ
 - Monitor logs để phát hiện truy cập bất thường
 
+# MongoDB Monitoring Alternatives for Raspberry Pi
+
+## 🔧 **Phương án 1: Sử dụng mongosh (Current)**
+**Ưu điểm:**
+- Công cụ chính thức của MongoDB
+- Đầy đủ tính năng
+- Syntax JavaScript quen thuộc
+
+**Nhược điểm:**
+- Chiếm RAM ~20-50MB
+- Cần cài đặt riêng
+- Node.js dependency
+
+**Phù hợp:** Khi cần thực hiện nhiều operations phức tạp
+
+## 🐳 **Phương án 2: Docker exec (Recommended for Pi)**
+```bash
+# Không cần cài mongosh riêng, dùng shell trong container
+docker exec -it mongo1 mongosh
+
+# Kiểm tra nhanh
+docker exec mongo1 mongosh --eval "rs.status()" --quiet
+```
+
+**Ưu điểm:**
+- Không chiếm thêm tài nguyên host
+- Sử dụng mongosh đã có trong container
+- Nhẹ nhàng hơn
+
+## 🌐 **Phương án 3: HTTP API (Lightest)**
+```bash
+# Sử dụng MongoDB HTTP interface (nếu enable)
+curl http://localhost:28017/serverStatus
+
+# Hoặc dùng REST API tools
+```
+
+## 📊 **Phương án 4: Docker stats + logs**
+```bash
+# Kiểm tra tài nguyên
+docker stats mongo1 mongo2 mongo3 --no-stream
+
+# Kiểm tra logs
+docker logs mongo1 --tail 20
+
+# Health check đơn giản
+docker exec mongo1 mongosh --eval "db.runCommand({ping: 1})"
+```
+
+## 🔍 **Phương án 5: Custom monitoring script**
+```bash
+#!/bin/bash
+# Lightweight monitoring without mongosh
+
+echo "=== Container Status ==="
+docker ps --filter "name=mongo" --format "table {{.Names}}\t{{.Status}}"
+
+echo -e "\n=== Resource Usage ==="
+docker stats mongo1 mongo2 mongo3 --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
+
+echo -e "\n=== Port Check ==="
+for port in 27017 27018 27019; do
+    nc -z localhost $port && echo "Port $port: ✓" || echo "Port $port: ✗"
+done
+```
+
+## 🎯 **Khuyến nghị cho Raspberry Pi:**
+
+### **Cho Raspberry Pi 4 (4GB+):**
+- Có thể cài mongosh bình thường
+- Impact không đáng kể
+
+### **Cho Raspberry Pi 3/4 (1-2GB):**
+- Ưu tiên dùng `docker exec`
+- Cài mongosh chỉ khi thực sự cần
+
+### **Cho Raspberry Pi Zero/older:**
+- Tránh cài mongosh
+- Dùng docker exec hoặc HTTP monitoring
+
+## 📈 **Monitoring Strategy:**
+
+```bash
+# Daily health check (cron job)
+0 8 * * * docker exec mongo1 mongosh --eval "rs.status()" --quiet >> /var/log/mongo-health.log
+
+# Resource monitoring
+*/15 * * * * docker stats mongo1 mongo2 mongo3 --no-stream >> /var/log/mongo-resources.log
+```
+
+
 ## Tài liệu tham khảo
 
 - [MongoDB Replica Set Documentation](https://docs.mongodb.com/manual/replication/)
