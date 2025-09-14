@@ -3,10 +3,10 @@
 services:
   # MongoDB Primary Node
   mongo1:
-    image: mongo:6.0
+    image: mongo:7.0
     container_name: mongo1
     hostname: mongo1
-    restart: unless-stopped
+    restart: always
     command: >
      bash -c "
        mkdir -p /etc/secrets &&
@@ -20,17 +20,23 @@ services:
       - mongo1_config:/data/configdb
       - ./scripts:/scripts
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=password123
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
     networks:
       - mongo-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
   
   # MongoDB Secondary Node 1
   mongo2:
-    image: mongo:6.0
+    image: mongo:7.0
     container_name: mongo2
     hostname: mongo2
-    restart: unless-stopped
+    restart: always
     command: >
      bash -c "
        mkdir -p /etc/secrets &&
@@ -43,8 +49,8 @@ services:
       - mongo2_data:/data/db
       - mongo2_config:/data/configdb
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=password123
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
     networks:
       - mongo-network
     depends_on:
@@ -52,10 +58,10 @@ services:
 
   # MongoDB Secondary Node 2
   mongo3:
-    image: mongo:6.0
+    image: mongo:7.0
     container_name: mongo3
     hostname: mongo3
-    restart: unless-stopped
+    restart: always
     command: >
      bash -c "
        mkdir -p /etc/secrets &&
@@ -68,8 +74,8 @@ services:
       - mongo3_data:/data/db
       - mongo3_config:/data/configdb
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=password123
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
     networks:
       - mongo-network
     depends_on:
@@ -79,20 +85,21 @@ services:
   mongo-express:
     image: mongo-express:1.0.0
     container_name: mongo-express
-    restart: unless-stopped
+    restart: always
     ports:
       - "${MONGO_EXPRESS_PORT:-8081}:8081"
     environment:
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_INITDB_ROOT_USERNAME}
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
-      - ME_CONFIG_MONGODB_SERVER=mongo1
-      - ME_CONFIG_MONGODB_PORT=27017
-      - ME_CONFIG_BASICAUTH_USERNAME=${ME_CONFIG_BASICAUTH_USERNAME}
-      - ME_CONFIG_BASICAUTH_PASSWORD=${ME_CONFIG_BASICAUTH_PASSWORD}
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_ROOT_USERNAME}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_ROOT_PASSWORD}
+      - ME_CONFIG_MONGODB_URL=mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0
+      - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USERNAME}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD}
     networks:
       - mongo-network
     depends_on:
       - mongo1
+      - mongo2
+      - mongo3
 
 # Định nghĩa volumes để lưu trữ dữ liệu
 volumes:
