@@ -22,6 +22,25 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Load environment variables
+load_env() {
+    if [ -f .env ]; then
+        export $(cat .env | grep -v '^#' | grep -v '^$' | xargs)
+        print_status "Environment variables loaded from .env"
+    else
+        print_error ".env file not found! Please create it first."
+        print_status "Creating .env from template..."
+        if [ -f .env.example ]; then
+            cp .env.example .env
+            print_warning "Please edit .env file with your credentials before running setup again"
+            exit 1
+        else
+            print_error "No .env.example found either! Please create .env manually."
+            exit 1
+        fi
+    fi
+}
+
 # Tạo thư mục cần thiết
 create_directories() {
     print_status "Creating necessary directories..."
