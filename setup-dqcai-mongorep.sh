@@ -195,6 +195,7 @@ case "$1" in
         echo "  restore - Restore dữ liệu từ backup"
         echo "  clean   - Xóa tất cả containers và dữ liệu"
         echo "  init    - Chỉ khởi tạo replica set (nếu containers đã chạy)"
+        echo "  docker-install- Kiểm tra và cài đặt Docker/Docker Compose"
         exit 1
         ;;
 esac
