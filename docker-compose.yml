@@ -6,7 +6,7 @@ services:
     image: mongo:7.0
     container_name: mongo1
     hostname: mongo1
-    restart: always
+    restart: unless-stopped #: Container restart trừ khi được dừng thủ công (khuyến nghị)
     command: >
      bash -c "
        mkdir -p /etc/secrets &&
@@ -36,7 +36,7 @@ services:
     image: mongo:7.0
     container_name: mongo2
     hostname: mongo2
-    restart: always
+    restart: unless-stopped #: Container restart trừ khi được dừng thủ công (khuyến nghị)
     command: >
      bash -c "
        mkdir -p /etc/secrets &&
@@ -61,7 +61,7 @@ services:
     image: mongo:7.0
     container_name: mongo3
     hostname: mongo3
-    restart: always
+    restart: unless-stopped #: Container restart trừ khi được dừng thủ công (khuyến nghị)
     command: >
      bash -c "
        mkdir -p /etc/secrets &&
@@ -85,7 +85,7 @@ services:
   mongo-express:
     image: mongo-express:1.0.0
     container_name: mongo-express
-    restart: always
+    restart: unless-stopped #: Container restart trừ khi được dừng thủ công (khuyến nghị)
     ports:
       - "${MONGO_EXPRESS_PORT:-8081}:8081"
     environment:
