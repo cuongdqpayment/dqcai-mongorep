@@ -11,7 +11,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - ./keyfile/mongodb-keyfile:/etc/secrets/mongodb-keyfile:ro # Thêm dòng này để mount keyFile
+      - ./keyfile/mongodb-keyfile:/etc/secrets/mongodb-keyfile:ro
       - mongo1_data:/data/db
       - mongo1_config:/data/configdb
       - ./scripts:/scripts
@@ -31,7 +31,7 @@ services:
     ports:
       - "27018:27017"
     volumes:
-      - ./keyfile/mongodb-keyfile:/etc/secrets/mongodb-keyfile:ro # Thêm dòng này
+      - ./keyfile/mongodb-keyfile:/etc/secrets/mongodb-keyfile:ro
       - mongo2_data:/data/db
       - mongo2_config:/data/configdb
     environment:
@@ -52,7 +52,7 @@ services:
     ports:
       - "27019:27017"
     volumes:
-      - ./keyfile/mongodb-keyfile:/etc/secrets/mongodb-keyfile:ro # Thêm dòng này
+      - ./keyfile/mongodb-keyfile:/etc/secrets/mongodb-keyfile:ro
       - mongo3_data:/data/db
       - mongo3_config:/data/configdb
     environment:
