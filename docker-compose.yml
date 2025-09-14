@@ -7,11 +7,11 @@ services:
     container_name: mongo1
     hostname: mongo1
     restart: unless-stopped
-    command: mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongo-keyfile
+    command: mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
     ports:
       - "27017:27017"
     volumes:
-      - ./keyfile/mongo-keyfile:/etc/secrets/mongo-keyfile:ro # Thêm dòng này để mount keyFile
+      - ./keyfile/mongodb-keyfile:/etc/secrets/mongodb-keyfile:ro # Thêm dòng này để mount keyFile
       - mongo1_data:/data/db
       - mongo1_config:/data/configdb
       - ./scripts:/scripts
@@ -27,11 +27,11 @@ services:
     container_name: mongo2
     hostname: mongo2
     restart: unless-stopped
-    command: mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongo-keyfile
+    command: mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
     ports:
       - "27018:27017"
     volumes:
-      - ./keyfile/mongo-keyfile:/etc/secrets/mongo-keyfile:ro # Thêm dòng này
+      - ./keyfile/mongodb-keyfile:/etc/secrets/mongodb-keyfile:ro # Thêm dòng này
       - mongo2_data:/data/db
       - mongo2_config:/data/configdb
     environment:
@@ -48,11 +48,11 @@ services:
     container_name: mongo3
     hostname: mongo3
     restart: unless-stopped
-    command: mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongo-keyfile
+    command: mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
     ports:
       - "27019:27017"
     volumes:
-      - ./keyfile/mongo-keyfile:/etc/secrets/mongo-keyfile:ro # Thêm dòng này
+      - ./keyfile/mongodb-keyfile:/etc/secrets/mongodb-keyfile:ro # Thêm dòng này
       - mongo3_data:/data/db
       - mongo3_config:/data/configdb
     environment:
