@@ -7,7 +7,7 @@ services:
     container_name: mongo1
     hostname: mongo1
     restart: unless-stopped
-    user: "${MONGO_UID:-1000}:${MONGO_GID:-1000}"
+    # user: "${MONGO_UID:-1000}:${MONGO_GID:-1000}"
     command: mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
     ports:
       - "27017:27017"
@@ -28,7 +28,7 @@ services:
     container_name: mongo2
     hostname: mongo2
     restart: unless-stopped
-    user: "${MONGO_UID:-1000}:${MONGO_GID:-1000}"
+    # user: "${MONGO_UID:-1000}:${MONGO_GID:-1000}"
     command: mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
     ports:
       - "27018:27017"
@@ -50,7 +50,7 @@ services:
     container_name: mongo3
     hostname: mongo3
     restart: unless-stopped
-    user: "${MONGO_UID:-1000}:${MONGO_GID:-1000}"
+    # user: "${MONGO_UID:-1000}:${MONGO_GID:-1000}"
     command: mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
     ports:
       - "27019:27017"
