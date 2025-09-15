@@ -18,9 +18,11 @@ mkdir init-scripts
 ```bash
 # shut down container
 docker compose -f docker-compose-single.yml down -v
+docker compose -f docker-compose-single-with-express.yml down -v
 
 # Start container
 docker compose -f docker-compose-single.yml up -d
+docker compose -f docker-compose-single-with-express.yml up -d
 
 # Kiểm tra container đang chạy
 docker ps

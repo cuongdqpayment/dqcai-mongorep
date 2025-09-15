@@ -28,14 +28,9 @@ services:
     sysctls:
       - net.core.somaxconn=65535
 
-volumes:
-  mongodb_data:
-    driver: local
-  mongodb_config:
-    driver: local
-
+# MongoDB Express for Web UI
 mongo-express:
-    image: mongo-express:1.0.2
+    image: mongo-express:1.0.0
     container_name: mongo-express-rpi
     restart: unless-stopped
     ports:
@@ -52,6 +47,13 @@ mongo-express:
       - mongodb
     networks:
       - mongodb-network
+
+# Định nghĩa volumes để lưu trữ dữ liệu
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
 
 networks:
   mongodb-network:
