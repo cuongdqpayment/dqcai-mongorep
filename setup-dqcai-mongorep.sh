@@ -24,20 +24,13 @@ print_error() {
 
 # Load environment variables
 load_env() {
+    # Tải biến môi trường từ tệp .env nếu nó tồn tại
     if [ -f .env ]; then
-        export $(cat .env | grep -v '^#' | grep -v '^$' | xargs)
-        print_status "Environment variables loaded from .env"
+        source .env
+        echo "Đã tải biến môi trường từ tệp .env."
     else
-        print_error ".env file not found! Please create it first."
-        print_status "Creating .env from template..."
-        if [ -f .env.example ]; then
-            cp .env.example .env
-            print_warning "Please edit .env file with your credentials before running setup again"
-            exit 1
-        else
-            print_error "No .env.example found either! Please create .env manually."
-            exit 1
-        fi
+        echo "Lỗi: Không tìm thấy tệp .env. Vui lòng tạo tệp này."
+        exit 1
     fi
 }
 
