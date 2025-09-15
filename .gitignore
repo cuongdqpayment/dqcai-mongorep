@@ -13,6 +13,7 @@ keyfile/
 .env
 .env.local
 docker-compose-no-env.yml
+docker-compose.yml
 
 # IDE
 .vscode/
