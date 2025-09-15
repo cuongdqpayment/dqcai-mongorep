@@ -1,4 +1,4 @@
-version: '3.8'
+# version: '3.8'
 
 services:
   mongodb:
@@ -9,7 +9,7 @@ services:
       - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_ROOT_PASSWORD: your-strong-password
       MONGO_INITDB_DATABASE: myapp
     volumes:
       - mongodb_data:/data/db
@@ -17,7 +17,16 @@ services:
       - ./init-scripts:/docker-entrypoint-initdb.d/
     networks:
       - mongodb-network
-    command: mongod --auth --bind_ip_all
+    command: mongod --auth --bind_ip_all --quiet
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    sysctls:
+      - net.core.somaxconn=65535
 
 volumes:
   mongodb_data:

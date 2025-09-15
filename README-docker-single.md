@@ -32,7 +32,7 @@ docker compose logs -f mongodb-rpi
 
 ```bash
 # Kết nối với user admin
-docker exec -it mongodb-rpi mongosh -u admin -p your-strong-password --authenticationDatabase admin
+docker exec -it mongodb-rpi mongosh -u admin -p admin123 --authenticationDatabase admin
 
 # Hoặc kết nối với user app
 docker exec -it mongodb-rpi mongosh -u appuser -p app-password --authenticationDatabase myapp
