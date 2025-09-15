@@ -28,8 +28,8 @@ services:
     sysctls:
       - net.core.somaxconn=65535
 
-# MongoDB Express for Web UI
-mongo-express:
+  # MongoDB Express for Web UI
+  mongo-express:
     image: mongo-express:1.0.0
     container_name: mongo-express-rpi
     restart: unless-stopped
