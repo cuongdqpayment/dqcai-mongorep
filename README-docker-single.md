@@ -23,7 +23,8 @@ docker compose -f docker-compose-single.yml up -d
 docker ps
 
 # Xem logs để đảm bảo MongoDB đã start thành công
-docker compose logs -f mongodb-rpi
+docker logs mongodb-rpi
+
 ```
 
 ## 3. Kết nối và quản lý MongoDB
