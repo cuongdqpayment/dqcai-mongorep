@@ -6,19 +6,15 @@ services:
     image: mongo:7.0
     container_name: mongo1
     hostname: mongo1
-    restart: unless-stopped #: Container restart trừ khi được dừng thủ công (khuyến nghị)
+    restart: unless-stopped
     command: >
-     bash -c "
-       mkdir -p /etc/secrets &&
-       mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
-     "
+      mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
     ports:
       - "27017:27017"
     volumes:
       - ./keyfile/mongodb-keyfile:/etc/secrets/mongodb-keyfile:ro
       - mongo1_data:/data/db
       - mongo1_config:/data/configdb
-      - ./scripts:/scripts
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
@@ -27,21 +23,18 @@ services:
       - mongo-network
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-  
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # MongoDB Secondary Node 1
   mongo2:
     image: mongo:7.0
     container_name: mongo2
     hostname: mongo2
-    restart: unless-stopped #: Container restart trừ khi được dừng thủ công (khuyến nghị)
+    restart: unless-stopped
     command: >
-     bash -c "
-       mkdir -p /etc/secrets &&
-       mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
-     "
+      mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
     ports:
       - "27018:27017"
     volumes:
@@ -55,18 +48,20 @@ services:
       - mongo-network
     depends_on:
       - mongo1
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # MongoDB Secondary Node 2
   mongo3:
     image: mongo:7.0
     container_name: mongo3
     hostname: mongo3
-    restart: unless-stopped #: Container restart trừ khi được dừng thủ công (khuyến nghị)
+    restart: unless-stopped
     command: >
-     bash -c "
-       mkdir -p /etc/secrets &&
-       mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
-     "
+      mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
     ports:
       - "27019:27017"
     volumes:
@@ -80,26 +75,56 @@ services:
       - mongo-network
     depends_on:
       - mongo1
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # MongoDB Express for Web UI (Optional)
+  # Service để khởi tạo Replica Set
+  mongo-init:
+    image: mongo:7.0
+    container_name: mongo-init
+    command: >
+      mongosh --host mongo1 --eval "
+        rs.initiate({
+          _id: 'rs0',
+          members: [
+            { _id: 0, host: 'mongo1:27017' },
+            { _id: 1, host: 'mongo2:27017' },
+            { _id: 2, host: 'mongo3:27017' }
+          ]
+        }, { force: true });
+      "
+    networks:
+      - mongo-network
+    depends_on:
+      mongo1:
+        condition: service_healthy
+      mongo2:
+        condition: service_healthy
+      mongo3:
+        condition: service_healthy
+
+  # MongoDB Express for Web UI
   mongo-express:
     image: mongo-express:1.0.0
     container_name: mongo-express
-    restart: unless-stopped #: Container restart trừ khi được dừng thủ công (khuyến nghị)
+    restart: unless-stopped
     ports:
       - "${MONGO_EXPRESS_PORT:-8081}:8081"
     environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo1,mongo2,mongo3
+      - ME_CONFIG_MONGODB_AUTH_DATABASE=admin
       - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_ROOT_USERNAME}
       - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_ROOT_PASSWORD}
-      - ME_CONFIG_MONGODB_URL=mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0&authSource=admin
+      # - ME_CONFIG_MONGODB_URL=mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0&authSource=admin
       - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USERNAME}
       - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD}
     networks:
       - mongo-network
     depends_on:
-      - mongo1
-      - mongo2
-      - mongo3
+      - mongo-init # Phụ thuộc vào service khởi tạo để đảm bảo cấu hình hoàn chỉnh
 
 # Định nghĩa volumes để lưu trữ dữ liệu
 volumes:

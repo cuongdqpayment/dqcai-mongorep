@@ -48,14 +48,14 @@ create_directories() {
     mkdir -p data/mongo1
     mkdir -p data/mongo2
     mkdir -p data/mongo3
-    # mkdir -p /etc/secrets
+    mkdir -p /etc/secrets
 }
 
 # Chờ container sẵn sàng
 wait_for_mongo() {
     print_status "Waiting for MongoDB container to be ready..."
     for i in {1..30}; do
-        if docker exec mongo1 mongosh --host localhost --port 27017 --eval "db.adminCommand('ping')" >/dev/null 2>&1; then
+        if docker exec mongo1 mongosh --host mongo1 --port 27017 --eval "db.adminCommand('ping')" >/dev/null 2>&1; then
             print_status "MongoDB is ready!"
             return 0
         fi
