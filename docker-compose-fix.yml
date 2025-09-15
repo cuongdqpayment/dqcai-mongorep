@@ -1,0 +1,187 @@
+version: '3.8'
+
+services:
+  # MongoDB Primary Node
+  mongo1:
+    image: mongo:7.0
+    container_name: mongo1
+    hostname: mongo1
+    restart: unless-stopped
+    command: >
+      bash -c "
+          mkdir -p /etc/secrets;
+          if [ ! -f /data/db/.mongodb_password_set ]; then
+            echo 'Starting MongoDB without auth to create admin user...';
+            mongod --replSet rs0 --bind_ip_all --port 27017 &
+            MONGO_PID=$$!;
+            until mongosh --quiet --eval 'db.runCommand({ping:1})' > /dev/null 2>&1; do 
+              echo 'Waiting for MongoDB to start...'; 
+              sleep 2; 
+            done;
+            echo 'Creating admin user...';
+            mongosh --quiet --eval '
+              use admin;
+              db.createUser({
+                user: \"admin\",
+                pwd: \"admin123\",
+                roles: [{ role: \"root\", db: \"admin\" }]
+              });
+              print(\"Admin user created successfully\");
+            ';
+            touch /data/db/.mongodb_password_set;
+            echo 'Shutting down MongoDB...';
+            mongosh --quiet admin --eval 'db.shutdownServer()' || kill $$MONGO_PID;
+            sleep 5;
+            echo 'Starting MongoDB with auth...';
+          fi;
+          mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
+      "
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./keyfile/mongodb-keyfile:/etc/secrets/mongodb-keyfile:ro
+      - mongo1_data:/data/db
+      - mongo1_config:/data/configdb
+    networks:
+      - mongo-network
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ping:1})' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  # MongoDB Secondary Node 1
+  mongo2:
+    image: mongo:7.0
+    container_name: mongo2
+    hostname: mongo2
+    restart: unless-stopped
+    command: >
+      bash -c "
+          mkdir -p /etc/secrets &&
+          mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
+      "
+    ports:
+      - "27018:27017"
+    volumes:
+      - ./keyfile/mongodb-keyfile:/etc/secrets/mongodb-keyfile:ro
+      - mongo2_data:/data/db
+      - mongo2_config:/data/configdb
+    networks:
+      - mongo-network
+    depends_on:
+      mongo1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ping:1})' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # MongoDB Secondary Node 2
+  mongo3:
+    image: mongo:7.0
+    container_name: mongo3
+    hostname: mongo3
+    restart: unless-stopped
+    command: >
+      bash -c "
+          mkdir -p /etc/secrets &&
+          mongod --replSet rs0 --bind_ip_all --port 27017 --auth --keyFile /etc/secrets/mongodb-keyfile
+      "
+    ports:
+      - "27019:27017"
+    volumes:
+      - ./keyfile/mongodb-keyfile:/etc/secrets/mongodb-keyfile:ro
+      - mongo3_data:/data/db
+      - mongo3_config:/data/configdb
+    networks:
+      - mongo-network
+    depends_on:
+      mongo1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ping:1})' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # Service để khởi tạo Replica Set
+  mongo-init:
+    image: mongo:7.0
+    container_name: mongo-init
+    restart: "no"
+    command: >
+      bash -c "
+        echo 'Waiting for all MongoDB nodes to be ready...';
+        sleep 20;
+        echo 'Checking if replica set is already initialized...';
+        if mongosh --host mongo1 -u admin -p admin123 --authenticationDatabase admin --quiet --eval 'rs.status()' 2>/dev/null | grep -q 'rs0'; then
+          echo 'Replica set already initialized';
+        else
+          echo 'Initializing replica set...';
+          mongosh --host mongo1 -u admin -p admin123 --authenticationDatabase admin --eval '
+            rs.initiate({
+              _id: \"rs0\",
+              members: [
+                { _id: 0, host: \"mongo1:27017\" },
+                { _id: 1, host: \"mongo2:27017\" },
+                { _id: 2, host: \"mongo3:27017\" }
+              ]
+            });
+          ';
+          echo 'Waiting for replica set to stabilize...';
+          sleep 10;
+          echo 'Replica set status:';
+          mongosh --host mongo1 -u admin -p admin123 --authenticationDatabase admin --eval 'rs.status()';
+        fi
+      "
+    networks:
+      - mongo-network
+    depends_on:
+      mongo1:
+        condition: service_healthy
+      mongo2:
+        condition: service_healthy
+      mongo3:
+        condition: service_healthy
+
+  # MongoDB Express for Web UI
+  mongo-express:
+    image: mongo-express:1.0.0
+    container_name: mongo-express
+    restart: unless-stopped
+    ports:
+      - "${MONGO_EXPRESS_PORT:-8081}:8081"
+    environment:
+      - ME_CONFIG_MONGODB_URL=mongodb://admin:admin123@mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0&authSource=admin
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+      - ME_CONFIG_OPTIONS_EDITORTHEME=ambiance
+    networks:
+      - mongo-network
+    depends_on:
+      - mongo-init
+
+# Định nghĩa volumes để lưu trữ dữ liệu
+volumes:
+  mongo1_data:
+    driver: local
+  mongo1_config:
+    driver: local
+  mongo2_data:
+    driver: local
+  mongo2_config:
+    driver: local
+  mongo3_data:
+    driver: local
+  mongo3_config:
+    driver: local
+
+# Định nghĩa network
+networks:
+  mongo-network:
+    driver: bridge

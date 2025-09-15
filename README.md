@@ -48,9 +48,121 @@ dqcai-mongorep/
 ```bash
 mkdir dqcai-mongorep
 cd dqcai-mongorep
-
 # Copy tất cả các files từ artifacts vào thư mục này
 ```
+
+### 1.x Thực thi tuần tự lệnh bằng tay
+
+```bash
+
+# tắt và xóa hết tất cả các docker compose theo cấu hình trong docker-compose.yml
+docker compose down -v
+
+# Hoặc theo file cấu hình riêng
+docker compose -f docker-compose-no-env.yml down -v
+
+# Chạy lệnh bằng file cấu hình riêng không đưa lên git 
+docker compose -f docker-compose-no-env.yml up -d
+
+# Hoặc Chạy lệnh bằng file cấu hình riêng nhưng chỉ chạy các docker riêng lẻ
+docker compose -f docker-compose-no-env.yml up -d mongo1 mongo2 mongo3
+
+# Kết nối vào một container chỉ định và tạo user admin
+# thay đổi user và pwd phù hợp
+docker exec -it mongo1 mongosh --eval "
+  use admin;
+  db.createUser({
+    user: 'admin',
+    pwd: 'admin123',
+    roles: [{ role: 'root', db: 'admin' }]
+  });
+"
+
+# Khởi chạy replicat set xác thực bằng user admin vừa tạo ở trên
+docker exec -it mongo1 mongosh -u admin -p admin123 --authenticationDatabase admin --eval "
+  rs.initiate({
+    _id: 'rs0',
+    members: [
+      { _id: 0, host: 'mongo1:27017' },
+      { _id: 1, host: 'mongo2:27017' },
+      { _id: 2, host: 'mongo3:27017' }
+    ]
+  });
+"
+
+# Kiểm tra trạng thái của replica set
+docker exec -it mongo1 mongosh -u admin -p admin123 --authenticationDatabase admin --eval "rs.status()"
+docker exec -it mongo1 mongosh -u cuongdq -p Cng888xHomeXyz --authenticationDatabase cuongdq --eval "rs.status()"
+
+
+# Sau khi nối vào csdl thì xem các lệnh sau sẽ biết đang có quyền và roles gì
+# [] // trả về mảng users
+test>db.runCommand({ connectionStatus: 1 }).authInfo.authenticatedUsers
+# [] // trả về mảng roles
+test>db.runCommand({ connectionStatus: 1 }).authInfo.authenticatedUserRoles
+
+
+# // Kết nối với mongosh (nếu chưa)
+docker exec -it mongo1 mongosh --host localhost -u admin -p Cng888xHomeXyz --authenticationDatabase admin
+
+# // Sau khi kết nối, chạy lệnh sau:
+use admin
+
+# // Lệnh 1: Xem người dùng đã xác thực
+db.runCommand({ connectionStatus: 1 }).authInfo.authenticatedUsers
+
+# // Kết quả có thể giống thế này:
+# /*
+# [
+#   {
+#     "user" : "admin",
+#     "db" : "admin"
+#   }
+# ]
+# */
+
+# // Lệnh 2: Xem các quyền của người dùng đó
+db.runCommand({ connectionStatus: 1 }).authInfo.authenticatedUserRoles
+
+# // Kết quả có thể giống thế này:
+# /*
+# [
+#   {
+#     "role" : "root",
+#     "db" : "admin"
+#   }
+# ]
+# */
+
+
+
+
+# Khởi chạy mongo-express theo file cấu hình
+docker compose -f docker-compose-no-env.yml up -d mongo-express
+
+# Kết nối vào container mongo-express để thử ping
+# Lệnh này giả định bạn đang sử dụng cùng file docker-compose.yml
+docker exec -it mongo-express mongosh "mongodb://mongo1:27017" --eval "db.adminCommand('ping')"
+
+# Kết nối vào mongo1 với user admin
+docker exec -it mongo1 mongosh --host localhost -u admin -p admin123 --authenticationDatabase admin
+
+# Khi đã vào shell, bạn có thể chạy các lệnh sau:
+> use admin
+> db.getUsers()
+
+
+# Sử dụng biến môi trường trong trường hợp tự động
+echo "Giá trị của MONGO_ROOT_USERNAME là: $MONGO_ROOT_USERNAME"
+echo "Giá trị của MONGO_ROOT_PASSWORD là: $MONGO_ROOT_PASSWORD"
+# Cách 2: Tải từ file .env
+source .env
+# Xem lại giá trị sau khi load file môi trường
+echo "Giá trị của MONGO_ROOT_USERNAME là: $MONGO_ROOT_USERNAME"
+echo "Giá trị của MONGO_ROOT_PASSWORD là: $MONGO_ROOT_PASSWORD"
+
+```
+
 
 ### 2. Cấp quyền thực thi cho script
 

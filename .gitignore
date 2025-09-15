@@ -12,6 +12,7 @@ keyfile/
 # Environment
 .env
 .env.local
+docker-compose-no-env.yml
 
 # IDE
 .vscode/

@@ -78,17 +78,28 @@ init_replica_set() {
     
     # Tạo file init-replica.js
     cat > scripts/init-replica.js << EOF
-if (!rs.status().ok) {
-    rs.initiate({
-        _id: 'rs0',
-        members: [
-            { _id: 0, host: 'mongo1:27017' },
-            { _id: 1, host: 'mongo2:27017' },
-            { _id: 2, host: 'mongo3:27017' }
-        ]
-    });
-}
+var config = {
+    "_id" : "rs0",
+    "members" : [
+        { "_id" : 0, "host" : "mongo1:27017" },
+        { "_id" : 1, "host" : "mongo2:27017" },
+        { "_id" : 2, "host" : "mongo3:27017" }
+    ]
+};
+rs.initiate(config, { force: true });
 EOF
+
+# if (!rs.status().ok) {
+#     rs.initiate({
+#         _id: 'rs0',
+#         members: [
+#             { _id: 0, host: 'mongo1:27017' },
+#             { _id: 1, host: 'mongo2:27017' },
+#             { _id: 2, host: 'mongo3:27017' }
+#         ]
+#     });
+# }
+# EOF
 
     # Copy script vào container
     docker cp scripts/init-replica.js mongo1:/tmp/init-replica.js
