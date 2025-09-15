@@ -48,7 +48,7 @@ create_directories() {
     mkdir -p data/mongo1
     mkdir -p data/mongo2
     mkdir -p data/mongo3
-    mkdir -p /etc/secrets
+    # mkdir -p /etc/secrets  # phải chạy dưới quyền sudo mới tạo được thư mục này, không an toàn, nên chạy ở phía docker compose nhé
 }
 
 # Chờ container sẵn sàng
